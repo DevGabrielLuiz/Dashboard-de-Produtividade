@@ -12,4 +12,4 @@ def home():
     return render_template("index.html") # essa página vai carregar esse arquivo html que está aqui
 
 if __name__ == "__main__":
-    socketio.run(app, host='localhost') # define que o app vai rodar no seu servidor local, ou seja, na internet em que o seu computador tá conectado
+    socketio.run(app,debug=True, host='localhost') # define que o app vai rodar no seu servidor local, ou seja, na internet em que o seu computador tá conectado
