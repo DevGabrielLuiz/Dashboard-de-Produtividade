@@ -11,5 +11,16 @@ socketio = SocketIO(app, cors_allowed_origins="*") # cria a conexão entre difer
 def home(): 
     return render_template("index.html") # essa página vai carregar esse arquivo html que está aqui
 
+# Lista simples para armazenar as tarefas na memória (enquanto o servidor rodar)
+tarefas = []
+
+@socketio.on('nova_tarefa')
+def handle_nova_tarefa(data):
+    texto = data.get('conteudo')
+    if texto:
+        tarefas.append(texto)
+        # Envia a nova tarefa para TODOS os usuários conectados
+        socketio.emit('atualizar_lista', {'conteudo': texto, 'total': len(tarefas)})
+
 if __name__ == "__main__":
     socketio.run(app, host='localhost') # define que o app vai rodar no seu servidor local, ou seja, na internet em que o seu computador tá conectado
