@@ -31,6 +31,11 @@
                     </div>
 
                     <ul id="lista-tarefas" class="list-group list-group-flush">
+                        {% for tarefa in tarefas %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2">
+                                {{ tarefa.conteudo }}
+                            </li>
+                        {% endfor %}
                         </ul>
                 </div>
             </div>
@@ -38,7 +43,7 @@
             <div class="col-md-4">
                 <div class="card shadow-sm p-4 text-center bg-white">
                     <h6 class="text-muted text-uppercase small">Tarefas Concluídas</h6>
-                    <h1 class="display-3 fw-bold text-primary" id="contador">0</h1>
+                    <h1 class="display-3 fw-bold text-primary" id="contador">{{total}}</h1>
                 </div>
             </div>
         </div>
