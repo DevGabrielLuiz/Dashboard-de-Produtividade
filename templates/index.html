@@ -27,7 +27,7 @@
                     
                     <div class="input-group mb-3">
                         <input type="text" id="input-tarefa" class="form-control" placeholder="Nova tarefa...">
-                        <button class="btn btn-primary" onclick="enviarTarefa()">Adicionar</button>
+                       <button class="btn btn-primary" id="btn-adicionar">Adicionar</button>
                     </div>
 
                     <ul id="lista-tarefas" class="list-group list-group-flush">
@@ -49,36 +49,56 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socketio/4.0.1/socket.io.js"></script>
-    <script>
-        const socket = io();
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // 1. Declaramos o socket fora para que todo o código consiga enxergá-lo
+    let socket;
 
+    document.addEventListener('DOMContentLoaded', () => {
+        // 2. Inicializamos a conexão assim que a página carrega
+        socket = io();
+
+        const btnAdicionar = document.getElementById('btn-adicionar');
+        const statusElement = document.getElementById('status');
+
+        // 3. Evento de Conexão
         socket.on('connect', () => {
-            document.getElementById('status').innerText = "● Servidor Online";
-            document.getElementById('status').classList.replace('text-primary', 'text-success');
-        });
-
-        // ÚNICA função para ENVIAR dados ao Python
-        function enviarTarefa() {
-            const input = document.getElementById('input-tarefa');
-            if (input.value.trim() !== "") {
-                socket.emit('nova_tarefa', { conteudo: input.value });
-                input.value = '';
+            console.log("Conectado ao servidor!");
+            if (statusElement) {
+                statusElement.innerText = "● Servidor Online";
+                statusElement.classList.replace('text-primary', 'text-success');
             }
-        }
-
-        // ÚNICA função para RECEBER dados do Python
-        socket.on('atualizar_front', (data) => {
-            // Atualiza o contador
-            document.getElementById('contador').innerText = data.total;
-
-            // Adiciona na lista
-            const lista = document.getElementById('lista-tarefas');
-            const novoItem = document.createElement('li');
-            novoItem.className = "list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2";
-            novoItem.innerText = data.conteudo;
-            lista.prepend(novoItem);
         });
-    </script>
-</body>
+
+        // 4. Escutar atualizações do servidor
+        socket.on('atualizar_front', (data) => {
+            console.log("Recebido do servidor:", data);
+            
+            // Atualiza o contador
+            const contador = document.getElementById('contador');
+            if (contador) contador.innerText = data.total;
+
+            // Adiciona na lista visual
+            const lista = document.getElementById('lista-tarefas');
+            if (lista) {
+                const novoItem = document.createElement('li');
+                novoItem.className = "list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2";
+                novoItem.innerText = data.conteudo;
+                lista.prepend(novoItem);
+            }
+        });
+
+        // 5. Configurar o clique do botão de forma segura
+        if (btnAdicionar) {
+            btnAdicionar.onclick = function() {
+                const input = document.getElementById('input-tarefa');
+                if (input && input.value.trim() !== "") {
+                    console.log("Enviando:", input.value);
+                    socket.emit('nova_tarefa', { conteudo: input.value });
+                    input.value = '';
+                }
+            };
+        }
+    });
+</script>
 </html>
