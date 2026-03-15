@@ -53,8 +53,20 @@ def handle_nova_tarefa(data):
             'total': total_tarefas
         }, broadcast=True) # broadcast=True para enviar para todos os clientes conectados) 
 
-        
 
+@socketio.on('excluir_tarefa')
+def handle_excluir_tarefa(data):
+    tarefa_id = data.get('id')
+    # Busca no SQLite pelo ID
+    tarefa = Tarefa.query.get(tarefa_id)
+    
+    if tarefa:
+        db.session.delete(tarefa)
+        db.session.commit()
+        
+        novo_total = Tarefa.query.count()
+        # Avisa todos os clientes para removerem o item da tela
+        socketio.emit('remover_da_tela', {'id': tarefa_id, 'total': novo_total})
 if __name__ == "__main__":
     # Garante que o banco de dados e a tabela existam
     with app.app_context():

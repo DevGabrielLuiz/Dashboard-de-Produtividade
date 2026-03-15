@@ -32,14 +32,16 @@
 
                     <ul id="lista-tarefas" class="list-group list-group-flush">
                         {% for tarefa in tarefas %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2">
+                            <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2" id="tarefa-{{ tarefa.id }}">
                                 {{ tarefa.conteudo }}
+                                <button class="btn btn-sm btn-outline-danger" onclick="deletarTarefa({{ tarefa.id }})">
+                                    &times;
+                                </button>
                             </li>
                         {% endfor %}
                         </ul>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="card shadow-sm p-4 text-center bg-white">
                     <h6 class="text-muted text-uppercase small">Tarefas Concluídas</h6>
@@ -51,49 +53,60 @@
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-    // 1. Declaramos o socket fora para que todo o código consiga enxergá-lo
     let socket;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // 2. Inicializamos a conexão assim que a página carrega
-        socket = io();
+    // Função global para que o 'onclick' do HTML a encontre
+    function deletarTarefa(id) {
+        if (confirm("Deseja excluir esta tarefa?")) {
+            // O nome aqui deve ser igual ao @socketio.on do Python
+            socket.emit('excluir_tarefa', { id: id });
+        }
+    }
 
+    document.addEventListener('DOMContentLoaded', () => {
+        socket = io();
         const btnAdicionar = document.getElementById('btn-adicionar');
         const statusElement = document.getElementById('status');
 
-        // 3. Evento de Conexão
         socket.on('connect', () => {
-            console.log("Conectado ao servidor!");
             if (statusElement) {
                 statusElement.innerText = "● Servidor Online";
                 statusElement.classList.replace('text-primary', 'text-success');
             }
         });
 
-        // 4. Escutar atualizações do servidor
+        // ESCUTAR: Nova tarefa adicionada
         socket.on('atualizar_front', (data) => {
-            console.log("Recebido do servidor:", data);
-            
-            // Atualiza o contador
             const contador = document.getElementById('contador');
             if (contador) contador.innerText = data.total;
 
-            // Adiciona na lista visual
             const lista = document.getElementById('lista-tarefas');
             if (lista) {
                 const novoItem = document.createElement('li');
+                // IMPORTANTE: Definir o ID para poder remover depois
+                novoItem.id = `tarefa-${data.id}`; 
                 novoItem.className = "list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2";
-                novoItem.innerText = data.conteudo;
+                novoItem.innerHTML = `
+                    ${data.conteudo}
+                    <button class="btn btn-sm btn-outline-danger" onclick="deletarTarefa(${data.id})">&times;</button>
+                `;
                 lista.prepend(novoItem);
             }
         });
 
-        // 5. Configurar o clique do botão de forma segura
+        // ESCUTAR: Tarefa removida
+        socket.on('remover_da_tela', (data) => {
+            const elemento = document.getElementById(`tarefa-${data.id}`);
+            if (elemento) elemento.remove();
+            
+            const contador = document.getElementById('contador');
+            if (contador) contador.innerText = data.total;
+        });
+
         if (btnAdicionar) {
             btnAdicionar.onclick = function() {
                 const input = document.getElementById('input-tarefa');
                 if (input && input.value.trim() !== "") {
-                    console.log("Enviando:", input.value);
                     socket.emit('nova_tarefa', { conteudo: input.value });
                     input.value = '';
                 }
